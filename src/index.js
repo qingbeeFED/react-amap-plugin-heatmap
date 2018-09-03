@@ -14,11 +14,11 @@ class Heatmap extends React.Component {
         this.resolveHeatmap(props).then(() => {
           this.triggerCreated(props);
           // if visible is set to false on created, hide it
-          if ((typeof props.visible === 'boolean') && !props.visible) {
+          if (typeof props.visible === 'boolean' && !props.visible) {
             this.heatmap.hide();
           }
           if ('dataSet' in props) {
-            this.heatmap.setDataSet(props.dataSet);
+            this.convertToAMap(props.dataSet);
           }
         });
       }
@@ -36,7 +36,7 @@ class Heatmap extends React.Component {
     const currentProps = this.props;
     this.resolveHeatmap().then(() => {
       this.refreshHeatmap(nextProps, currentProps);
-    })
+    });
   }
 
   resolveHeatmap(props) {
@@ -55,9 +55,33 @@ class Heatmap extends React.Component {
     }
   }
 
+  // 地图数据转换
+  convertToAMap(dataSet) {
+    const points = dataSet.data.map((item) => {
+      return new AMap.LngLat(item.lng, item.lat);
+    });
+
+    AMap.convertFrom(points, 'baidu', function(status, result) {
+      if (result.info === 'ok') {
+        var lnglats = result.locations;
+        const rData = lnglats.map((item, index) => {
+          return {
+            ...dataSet.data[index],
+            lng: item.getLng(),
+            lat: item.getLat()
+          };
+        });
+        this.heatmap.setDataSet({
+          ...dataSet,
+          data: rData
+        });
+      }
+    });
+  }
+
   triggerCreated(props) {
     const events = props.events || {};
-    if (('created' in events) && (typeof events.created === 'function')) {
+    if ('created' in events && typeof events.created === 'function') {
       events.created(this.heatmap);
     }
   }
@@ -93,8 +117,8 @@ class Heatmap extends React.Component {
       this.heatmap.setOptions(opts);
     }
 
-    if (nextProps.dataSet !== currentProps.dataSet ) {
-      this.heatmap.setDataSet(nextProps.dataSet);
+    if (nextProps.dataSet !== currentProps.dataSet) {
+      this.convertToAMap(nextProps.dataSet);
     }
   }
 
