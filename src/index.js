@@ -18,7 +18,7 @@ class Heatmap extends React.Component {
             this.heatmap.hide();
           }
           if ('dataSet' in props) {
-            this.convertToAMap(props.dataSet);
+            this.createAMap(props.dataSet, props.mapType);
           }
         });
       }
@@ -55,23 +55,29 @@ class Heatmap extends React.Component {
     }
   }
 
-  // 地图数据转换
-  convertToAMap(dataSet) {
+  // 其他经纬度坐标转换后再构建热力图
+  createAMap(dataSet, mapType = '') {
+    const mapTypes = ['baidu', 'gps', 'mapbar'];
+    if (mapTypes.indexOf(mapType) === -1) {
+      this.heatmap.setDataSet(dataSet);
+      return;
+    }
     const points = dataSet.data.map((item) => {
       return new AMap.LngLat(item.lng, item.lat);
     });
 
-    AMap.convertFrom(points, 'baidu', function(status, result) {
+    AMap.convertFrom(points, mapType, function(status, result) {
       if (result.info === 'ok') {
         var lnglats = result.locations;
         const rData = lnglats.map((item, index) => {
           return {
-            count: dataSet.data[index].count,
+            ...dataSet.data[index],
             lng: item.getLng(),
             lat: item.getLat()
           };
         });
         this.heatmap.setDataSet({
+          ...dataSet,
           data: rData
         });
       }
@@ -117,7 +123,7 @@ class Heatmap extends React.Component {
     }
 
     if (nextProps.dataSet !== currentProps.dataSet) {
-      this.convertToAMap(nextProps.dataSet);
+      this.createAMap(nextProps.dataSet);
     }
   }
 
