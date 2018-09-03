@@ -66,13 +66,12 @@ class Heatmap extends React.Component {
         var lnglats = result.locations;
         const rData = lnglats.map((item, index) => {
           return {
-            ...dataSet.data[index],
+            count: dataSet.data[index].count,
             lng: item.getLng(),
             lat: item.getLat()
           };
         });
         this.heatmap.setDataSet({
-          ...dataSet,
           data: rData
         });
       }
